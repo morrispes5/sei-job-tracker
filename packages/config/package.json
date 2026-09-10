@@ -1,0 +1,14 @@
+{
+  "name": "@sei/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "tsconfig.base.json"
+  ],
+  "scripts": {
+    "build": "tsc --version",
+    "lint": "eslint --no-error-on-unmatched-pattern .",
+    "typecheck": "tsc --version",
+    "test": "vitest run --passWithNoTests"
+  }
+}

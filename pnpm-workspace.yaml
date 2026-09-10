@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Vite and Expo require esbuild's platform binary to perform local/CI builds.
+# Keep the allowlist narrow; no other dependency lifecycle scripts are approved.
+onlyBuiltDependencies:
+  - esbuild
+
+allowBuilds:
+  esbuild: true

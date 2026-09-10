@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sei-job-tracker-postgres
+    environment:
+      POSTGRES_DB: job_tracker
+      POSTGRES_USER: job_tracker
+      POSTGRES_PASSWORD: job_tracker_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
