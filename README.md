@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M0 — Repository foundation**. Product features begin only in their assigned milestones.
+This repository currently implements **M1 — shared contracts and database foundation**. API routes, authentication, and application CRUD remain in their assigned later milestones.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -48,3 +48,23 @@ Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja
 - Web dan mobile berbagi schema Zod, type, serta API path constants dari `packages/shared`.
 - Drizzle Studio hanya dibuka lokal untuk inspeksi data; tidak pernah dipublikasikan.
 - Fitur baru harus punya: user flow, perubahan data model, endpoint, test, dan catatan migration.
+
+## M1 database foundation
+
+- Shared Zod enum contracts and REST path constants live in `packages/shared`.
+- The Drizzle PostgreSQL schema, initial migration, and development-only seed live in `apps/api/src/drizzle`.
+- Drizzle Studio is local/development-only; it must never be exposed publicly.
+
+### Run the local database
+
+Docker Engine is required to start the documented local PostgreSQL service. Then, in PowerShell:
+
+```powershell
+docker compose up -d
+$env:DATABASE_URL = 'postgresql://job_tracker:job_tracker_dev@localhost:5432/job_tracker'
+pnpm --filter @sei/api db:migrate
+pnpm --filter @sei/api db:seed
+pnpm --filter @sei/api db:studio
+```
+
+The seed contains synthetic development data only; it does not create a login-capable user before M2.

@@ -1,6 +1,6 @@
-/**
- * Product identity shared by all Sei clients. Domain schemas start in M1.
- */
+export * from "./application";
+
+/** Product identity shared by all Sei clients. */
 export const product = {
   name: "Sei",
   fullName: "Sei — Job Tracker",

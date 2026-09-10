@@ -3,9 +3,14 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node",
+    "esModuleInterop": true,
     "declaration": true,
     "outDir": "dist",
     "types": ["node"],
+    "baseUrl": "../..",
+    "paths": {
+      "@sei/shared": ["packages/shared/src/index.ts"]
+    },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
