@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M2 — shared contracts, database foundation, and Auth API**. Application CRUD remains in M3.
+This repository currently implements **M3 — shared contracts, database foundation, Auth API, and Application API**. Web and mobile dashboards remain in M4/M5.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -77,4 +77,14 @@ The seed contains synthetic development data only; it is not a login account. Cr
 - Access tokens are short-lived JWTs. Auth inputs and shared platform enums are defined in `packages/shared`.
 - Register, login, refresh-rotation, logout, invalid-credential, lint, typecheck, test, and build checks are covered in the M2 handoff.
 
-See [M2 handoff](docs/HANDOFF_M2.md) for the exact files, contract decisions, verification evidence, and the database/runtime gate before M3.
+See [M2 handoff](docs/HANDOFF_M2.md) for auth session details.
+
+## M3 Application API
+
+- NestJS REST routes live under `/api/v1/applications` for CRUD, archive/restore, soft delete, notes, contacts, and immutable activities.
+- Every query is scoped by the JWT `userId`. Missing or cross-user resources return a generic 404.
+- List supports `status`, `type`, `q`, `archived`, deadline range, pagination, and an allowlisted `sort`.
+- Status changes write one `STATUS_CHANGED` activity; create writes `CREATED` in the same transaction.
+- Moving from `WISHLIST` to `APPLIED` fills `appliedAt` when the client did not send it.
+
+See [M3 handoff](docs/HANDOFF_M3.md) for files, verification evidence, and the remaining database/runtime gate.

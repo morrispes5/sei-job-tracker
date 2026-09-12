@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   apiPaths,
+  applicationActivityTypeSchema,
+  applicationCreateSchema,
+  applicationListQuerySchema,
   applicationStatusSchema,
   applicationTypeSchema,
+  applicationUpdateSchema,
+  httpUrlSchema,
   reminderDeliveryStatusSchema,
   workModeSchema,
 } from "./application";
@@ -60,5 +65,56 @@ describe("shared application contracts", () => {
     ).toBe(false);
     expect(clientPlatformSchema.safeParse("mobile").success).toBe(true);
     expect(clientPlatformSchema.safeParse("desktop").success).toBe(false);
+  });
+
+  it("validates application create payloads and https URLs", () => {
+    expect(
+      applicationCreateSchema.safeParse({
+        title: "Backend Intern",
+        organizationName: "Contoh Teknologi",
+        type: "INTERNSHIP",
+        status: "WISHLIST",
+        sourceUrl: "https://example.com/jobs/123",
+        deadlineAt: "2026-10-05T16:59:00.000Z",
+      }).success,
+    ).toBe(true);
+    expect(
+      applicationCreateSchema.safeParse({
+        organizationName: "Contoh Teknologi",
+        type: "INTERNSHIP",
+        status: "WISHLIST",
+      }).success,
+    ).toBe(false);
+    expect(
+      httpUrlSchema.safeParse("https://example.com/jobs/123").success,
+    ).toBe(true);
+    expect(httpUrlSchema.safeParse("javascript:alert(1)").success).toBe(false);
+    expect(
+      applicationActivityTypeSchema.safeParse("STATUS_CHANGED").success,
+    ).toBe(true);
+    expect(applicationUpdateSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("parses list query defaults and rejects oversized pages", () => {
+    expect(applicationListQuerySchema.parse({})).toMatchObject({
+      page: 1,
+      limit: 20,
+      sort: "updatedAt_desc",
+      archived: false,
+    });
+    expect(applicationListQuerySchema.safeParse({ limit: "101" }).success).toBe(
+      false,
+    );
+    expect(
+      applicationListQuerySchema.parse({
+        status: "APPLIED",
+        archived: "true",
+        q: "intern",
+      }),
+    ).toMatchObject({
+      status: "APPLIED",
+      archived: true,
+      q: "intern",
+    });
   });
 });

@@ -85,4 +85,4 @@ Gunakan `X-Client-Platform: web` untuk browser atau `mobile` untuk Expo. Jangan 
 
 ## Next handoff — M3
 
-Implementasikan Application API sesuai `docs/API_CONTRACT.md`: CRUD application, filter/pagination, notes, contacts, activities, serta ownership query dengan `user_id` dari JWT. Jangan mengubah schema atau kontrak M2 tanpa update docs dan migration yang sesuai.
+M3 sudah dilanjutkan di [HANDOFF_M3.md](HANDOFF_M3.md). Implementasi Application API memakai kontrak di `docs/API_CONTRACT.md` dengan ownership `user_id` dari JWT.

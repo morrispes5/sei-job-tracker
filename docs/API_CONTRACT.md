@@ -58,7 +58,19 @@ Semua request auth yang membuat atau memakai session mengirim header `X-Client-P
 | POST   | `/applications/:id/restore` | Keluarkan dari archive          |
 | DELETE | `/applications/:id`         | Soft delete                     |
 
+Semua endpoint application membutuhkan Bearer access token. Resource milik user lain atau yang sudah di-soft-delete mengembalikan 404 generik.
+
 Query daftar: `status`, `type`, `q`, `archived`, `deadlineFrom`, `deadlineTo`, `page`, `limit`, `sort`.
+
+- `archived` default `false` (hanya application aktif). `true` menampilkan yang diarsip.
+- `q` mencari `title` dan `organizationName`.
+- `page` default 1; `limit` default 20, maksimum 100.
+- `sort` allowlist: `updatedAt_desc` (default), `updatedAt_asc`, `deadlineAt_asc`, `deadlineAt_desc`, `createdAt_desc`, `createdAt_asc`.
+- Response list: `{ "data": [...], "meta": { "page", "limit", "total", "hasNextPage" } }`.
+
+Membuat application menyimpan record dan activity `CREATED` dalam satu transaction. Mengubah `status` menyimpan `STATUS_CHANGED` sekali per perubahan. Archive/restore/delete menulis activity `ARCHIVED`, `RESTORED`, atau `DELETED`. Timeline activity bersifat immutable (hanya GET).
+
+`appliedAt` boleh kosong pada `WISHLIST` dan diisi otomatis (tanggal UTC) ketika status pertama kali menjadi `APPLIED` jika klien belum mengirim nilainya.
 
 ```json
 {
