@@ -1,4 +1,5 @@
 export * from "./application";
+export * from "./auth";
 
 /** Product identity shared by all Sei clients. */
 export const product = {

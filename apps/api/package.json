@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "dev": "tsx watch src/main.ts",
     "lint": "eslint src",
+    "pretest": "pnpm --filter @sei/shared build",
     "predb:check": "pnpm --filter @sei/shared build",
     "predb:generate": "pnpm --filter @sei/shared build",
     "predb:migrate": "pnpm --filter @sei/shared build",
@@ -22,15 +23,26 @@
   "dependencies": {
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.6",
     "@sei/shared": "workspace:*",
+    "argon2": "^0.44.0",
+    "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.44.5",
+    "express": "^5.2.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
     "postgres": "^3.4.7",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.6",
+    "@types/passport-jwt": "^4.0.1",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.5"
   }

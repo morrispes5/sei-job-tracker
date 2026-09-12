@@ -7,6 +7,11 @@ import {
   reminderDeliveryStatusSchema,
   workModeSchema,
 } from "./application";
+import {
+  authLoginSchema,
+  authRegisterSchema,
+  clientPlatformSchema,
+} from "./auth";
 
 describe("shared application contracts", () => {
   it("accepts only documented application enums", () => {
@@ -39,5 +44,21 @@ describe("shared application contracts", () => {
     expect(apiPaths.applications.noteById("application-1", "note-1")).toBe(
       "/applications/application-1/notes/note-1",
     );
+  });
+
+  it("normalizes auth email and keeps the platform transport closed", () => {
+    expect(
+      authRegisterSchema.parse({
+        email: "  USER@Example.COM ",
+        password: "a-secure-password",
+        displayName: "Demo",
+      }),
+    ).toMatchObject({ email: "user@example.com", timezone: "UTC" });
+    expect(
+      authLoginSchema.safeParse({ email: "invalid", password: "short" })
+        .success,
+    ).toBe(false);
+    expect(clientPlatformSchema.safeParse("mobile").success).toBe(true);
+    expect(clientPlatformSchema.safeParse("desktop").success).toBe(false);
   });
 });

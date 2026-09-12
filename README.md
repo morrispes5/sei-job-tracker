@@ -8,23 +8,23 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M1 — shared contracts and database foundation**. API routes, authentication, and application CRUD remain in their assigned later milestones.
+This repository currently implements **M2 — shared contracts, database foundation, and Auth API**. Application CRUD remains in M3.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
 ## Keputusan yang sudah dikunci
 
-| Area | Pilihan |
-| --- | --- |
-| Monorepo | pnpm workspaces + Turborepo |
-| API | NestJS, REST JSON, TypeScript strict |
-| Database | Neon PostgreSQL, database khusus `job_tracker` |
-| Data access | Drizzle ORM + drizzle-kit + Drizzle Studio (development only) |
-| Web | Vite, React 19, TanStack Router/Query, shadcn/ui |
-| Mobile | Expo React Native, Expo Router, TanStack Query |
-| Auth | Email/password, JWT access token + rotating refresh token |
-| Reminder MVP | Email reminder terjadwal |
-| Visual direction | Dark tech dashboard |
+| Area             | Pilihan                                                       |
+| ---------------- | ------------------------------------------------------------- |
+| Monorepo         | pnpm workspaces + Turborepo                                   |
+| API              | NestJS, REST JSON, TypeScript strict                          |
+| Database         | Neon PostgreSQL, database khusus `job_tracker`                |
+| Data access      | Drizzle ORM + drizzle-kit + Drizzle Studio (development only) |
+| Web              | Vite, React 19, TanStack Router/Query, shadcn/ui              |
+| Mobile           | Expo React Native, Expo Router, TanStack Query                |
+| Auth             | Email/password, JWT access token + rotating refresh token     |
+| Reminder MVP     | Email reminder terjadwal                                      |
+| Visual direction | Dark tech dashboard                                           |
 
 ## Peta dokumen
 
@@ -67,4 +67,14 @@ pnpm --filter @sei/api db:seed
 pnpm --filter @sei/api db:studio
 ```
 
-The seed contains synthetic development data only; it does not create a login-capable user before M2.
+The seed contains synthetic development data only; it is not a login account. Create a real account through the M2 Auth API.
+
+## M2 Auth API
+
+- NestJS REST routes live under `/api/v1/auth`: register, login, refresh, logout, and `me`.
+- Passwords and opaque refresh tokens use Argon2id; refresh sessions are stored hashed and rotated transactionally.
+- Web uses the `sei_refresh_token` `httpOnly` cookie; mobile receives a JSON refresh token for Expo SecureStore.
+- Access tokens are short-lived JWTs. Auth inputs and shared platform enums are defined in `packages/shared`.
+- Register, login, refresh-rotation, logout, invalid-credential, lint, typecheck, test, and build checks are covered in the M2 handoff.
+
+See [M2 handoff](docs/HANDOFF_M2.md) for the exact files, contract decisions, verification evidence, and the database/runtime gate before M3.

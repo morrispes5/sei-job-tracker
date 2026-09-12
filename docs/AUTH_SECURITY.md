@@ -24,7 +24,7 @@ sequenceDiagram
 ## 3. Aturan implementasi
 
 - Password di-hash dengan Argon2id. Jangan log password, token, request authorization, atau connection string.
-- Access token berumur pendek (contoh 15 menit); refresh token lebih panjang dan **dirotasi** setiap refresh.
+- Access token berumur pendek (contoh 15 menit); refresh token opaque berumur lebih panjang, menyimpan hash Argon2id di database, dan **dirotasi** setiap refresh.
 - Web menyimpan refresh token di secure, httpOnly, sameSite cookie. Access token hanya di memory bila memungkinkan.
 - Mobile menyimpan refresh token di `expo-secure-store`, bukan AsyncStorage. Access token juga tidak ditulis ke log.
 - Tabel refresh token menyimpan hash token, expiry, revokedAt, device label opsional, dan createdAt.
