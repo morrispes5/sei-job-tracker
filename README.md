@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M3 — shared contracts, database foundation, Auth API, and Application API**. Web and mobile dashboards remain in M4/M5.
+This repository currently implements **M4 — Web dashboard and application management UI** on top of the M1–M3 foundation. Mobile remains in M5.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -88,3 +88,12 @@ See [M2 handoff](docs/HANDOFF_M2.md) for auth session details.
 - Moving from `WISHLIST` to `APPLIED` fills `appliedAt` when the client did not send it.
 
 See [M3 handoff](docs/HANDOFF_M3.md) for files, verification evidence, and the remaining database/runtime gate.
+
+## M4 Web dashboard
+
+- Vite + React 19 dashboard memakai TanStack Router dan TanStack Query dengan dark control-room design, Lucide icon, serta komponen aksesibel berbasis Radix.
+- Session web menyimpan access token hanya di memori; refresh memakai cookie `httpOnly` dan request API mengulang satu kali setelah respons `401`.
+- Dashboard mengambil metrik status, deadline terdekat, dan application terbaru dari endpoint Application API yang sudah ada. Ia belum menambah endpoint summary atau reminder di luar scope M4.
+- Application dapat dibuat, dicari/filter, dibuka, diubah, diarsipkan/dipulihkan, dihapus secara soft delete, serta diberi note dan contact dari UI web.
+
+See [M4 handoff](docs/HANDOFF_M4.md) for route coverage, validation, and the database/API runtime gate.

@@ -234,6 +234,69 @@ export type ApplicationContactUpdateInput = z.infer<
   typeof applicationContactUpdateSchema
 >;
 
+export interface ApplicationDto {
+  id: string;
+  userId: string;
+  title: string;
+  organizationName: string;
+  type: ApplicationType;
+  status: ApplicationStatus;
+  sourceUrl: string | null;
+  sourceName: string | null;
+  location: string | null;
+  workMode: WorkMode | null;
+  salaryMin: string | null;
+  salaryMax: string | null;
+  currency: string | null;
+  description: string | null;
+  appliedAt: string | null;
+  deadlineAt: string | null;
+  nextStepAt: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApplicationNoteDto {
+  id: string;
+  applicationId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ApplicationContactDto {
+  id: string;
+  applicationId: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  profileUrl: string | null;
+}
+
+export interface ApplicationActivityDto {
+  id: string;
+  applicationId: string;
+  type: ApplicationActivityType;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ApplicationDetailDto extends ApplicationDto {
+  notes: ApplicationNoteDto[];
+  contacts: ApplicationContactDto[];
+  activities: ApplicationActivityDto[];
+}
+
+export interface ApplicationListResponse {
+  data: ApplicationDto[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNextPage: boolean;
+  };
+}
+
 /** REST paths without the API version prefix; clients prepend `apiPaths.v1`. */
 export const apiPaths = {
   v1: "/api/v1",

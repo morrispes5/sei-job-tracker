@@ -31,3 +31,15 @@ export const authRefreshSchema = z.object({
 export type AuthRegisterInput = z.infer<typeof authRegisterSchema>;
 export type AuthLoginInput = z.infer<typeof authLoginSchema>;
 export type AuthRefreshInput = z.infer<typeof authRefreshSchema>;
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  displayName: string;
+  timezone: string;
+}
+
+export interface AuthWebSession {
+  accessToken: string;
+  user: AuthUser;
+}
