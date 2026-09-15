@@ -47,6 +47,7 @@ Kebijakan ditulis di `docs/REMINDER_EMAIL.md` dan diuji sebagai pure policy sebe
 - Quota persisten per user: 1.000 application, 5.000 note, 2.000 contact, 1.000 total reminder; quota check dan insert diserialisasi dengan advisory transaction lock.
 - Direct `drizzle-orm` diperbarui ke versi patched. Override transitive patch menutup advisory high `image-size` dan `multer`; PostCSS memakai versi patched. Patch reproducible `patches/metro@0.83.3.patch` mengadaptasi Metro ke API file async `image-size` 2.x sehingga Expo Android/iOS/web tetap dapat diekspor.
 - CI validation sekarang menjalankan `pnpm test:integration` setelah unit test.
+- Web dan mobile menjalankan build `@sei/shared` pada `pretest`, sehingga test dari clean checkout tidak bergantung pada artifact `dist` yang kebetulan sudah ada secara lokal. Koreksi ini berasal dari bukti GitHub Actions pertama untuk M7 yang gagal saat package shared belum dibangun.
 
 ## Audit security
 
@@ -100,6 +101,7 @@ Real authenticated UI against the disposable API tidak dijalankan sebagai satu b
 - Tidak ada real phone/tablet/emulator E2E pada M7; mobile release transport policy diuji sebagai unit dan Expo export/build gate.
 - PostgreSQL concurrency sudah terbukti pada cluster lokal disposable, tetapi belum membuktikan latency/failover/topology database production.
 - GitHub Actions baru menjadi bukti eksternal setelah commit dipush dan workflow selesai; local green gate bukan bukti CI remote.
+- Push M7 pertama (`e3ca180`) mencapai GitHub Actions tetapi gagal pada `pnpm test` karena web/mobile belum membangun entry package shared dari clean checkout. Ini diperbaiki melalui `pretest`; status run koreksi harus diperiksa terpisah dan tidak diasumsikan dari gate lokal.
 
 ## Next milestone boundary
 

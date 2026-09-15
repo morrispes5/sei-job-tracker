@@ -7,6 +7,7 @@
     "build": "expo export --platform all",
     "dev": "expo start",
     "lint": "eslint app src",
+    "pretest": "pnpm --filter @sei/shared build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
