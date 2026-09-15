@@ -43,3 +43,7 @@ export interface AuthWebSession {
   accessToken: string;
   user: AuthUser;
 }
+
+export interface AuthMobileSession extends AuthWebSession {
+  refreshToken: string;
+}

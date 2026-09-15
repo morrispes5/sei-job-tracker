@@ -10,3 +10,6 @@ onlyBuiltDependencies:
 allowBuilds:
   esbuild: true
   argon2: true
+
+overrides:
+  "@types/react-dom": 19.1.9

@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M4 — Web dashboard and application management UI** on top of the M1–M3 foundation. Mobile remains in M5.
+This repository currently implements **M5 — Mobile app** on top of the M1–M4 API and web foundation. The Expo app now covers authentication and the core application workflow; reminder delivery remains in M6 and deployment remains in M8.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -97,3 +97,13 @@ See [M3 handoff](docs/HANDOFF_M3.md) for files, verification evidence, and the r
 - Application dapat dibuat, dicari/filter, dibuka, diubah, diarsipkan/dipulihkan, dihapus secara soft delete, serta diberi note dan contact dari UI web.
 
 See [M4 handoff](docs/HANDOFF_M4.md) for route coverage, validation, and the database/API runtime gate.
+
+## M5 Mobile app
+
+- Expo Router provides native login/register, dashboard, application list/detail/create/edit, and profile routes.
+- Mobile access tokens stay in React memory. Rotating refresh tokens use Expo SecureStore on native devices and are never written to AsyncStorage.
+- TanStack Query shares the existing NestJS API contract, retries one request after a successful refresh, and preserves cached read-only data while offline without queueing writes.
+- Application management includes search, filters, pagination, status changes, archive/restore, soft delete, notes, contacts, source links, and activity history.
+- The Expo export is verified for Android, iOS, and web. A real shared-account/data run still requires a reachable API, PostgreSQL, secrets, and a phone or emulator.
+
+See [M5 handoff](docs/HANDOFF_M5.md) for route coverage, security decisions, validation evidence, known external gates, and the M6 continuation prompt.

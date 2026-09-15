@@ -1,22 +1,20 @@
 import { Redirect } from "expo-router";
 
 import { useAuth } from "../src/auth/auth-provider";
+import { AuthScreen } from "../src/components/auth-screen";
 import { LoadingState, Screen } from "../src/components/ui";
 
-export default function IndexScreen() {
+export default function LoginScreen() {
   const { state } = useAuth();
-
   if (state.status === "loading") {
     return (
       <Screen>
-        <LoadingState label="Memeriksa session amanmu…" />
+        <LoadingState />
       </Screen>
     );
   }
-
-  return (
-    <Redirect
-      href={state.status === "authenticated" ? "/dashboard" : "/login"}
-    />
-  );
+  if (state.status === "authenticated") {
+    return <Redirect href="/dashboard" />;
+  }
+  return <AuthScreen mode="login" />;
 }
