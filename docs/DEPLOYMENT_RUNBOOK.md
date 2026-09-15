@@ -2,13 +2,13 @@
 
 ## 1. Target minimal
 
-| Komponen | Local | Preview | Production |
-| --- | --- | --- | --- |
-| API NestJS | pnpm dev | Docker/managed web service | Docker/managed web service |
-| Web Vite | pnpm dev | Static host | Static host |
-| Database | Docker Postgres | Neon non-production | Neon production `job_tracker` |
-| Email | log/sandbox | sandbox | verified sending domain |
-| Mobile | Expo Go/dev build | EAS preview opsional | EAS production build |
+| Komponen   | Local             | Preview                    | Production                    |
+| ---------- | ----------------- | -------------------------- | ----------------------------- |
+| API NestJS | pnpm dev          | Docker/managed web service | Docker/managed web service    |
+| Web Vite   | pnpm dev          | Static host                | Static host                   |
+| Database   | Docker Postgres   | Neon non-production        | Neon production `job_tracker` |
+| Email      | log/sandbox       | sandbox                    | verified sending domain       |
+| Mobile     | Expo Go/dev build | EAS preview opsional       | EAS production build          |
 
 Backend hosting dipilih setelah baseline berjalan; pilih satu provider yang mendukung Docker/Node dan environment variable. Jangan pindah provider di tengah implementasi MVP tanpa alasan operasional yang jelas.
 
@@ -23,8 +23,10 @@ JWT_ACCESS_SECRET=replace-with-long-random-secret
 JWT_REFRESH_SECRET=replace-with-long-random-secret
 WEB_ORIGIN=http://localhost:5173
 EMAIL_FROM=Job Tracker <no-reply@notify.example.com>
+EMAIL_PROVIDER=development
 EMAIL_PROVIDER_API_KEY=
 APP_BASE_URL=http://localhost:5173
+REMINDER_BATCH_SIZE=25
 
 # Web
 VITE_API_BASE_URL=http://localhost:3000/api/v1
@@ -34,6 +36,8 @@ EXPO_PUBLIC_API_BASE_URL=http://LAN-OR-PREVIEW-URL/api/v1
 ```
 
 Hanya variable `VITE_*` dan `EXPO_PUBLIC_*` yang boleh masuk client. Database URL, JWT secret, dan API key email hanya berada di API runtime.
+
+`EMAIL_PROVIDER=development` hanya untuk local/preview aman dan tidak mengirim email nyata. Production wajib memakai `EMAIL_PROVIDER=resend`, API key server-side, sender domain terverifikasi, dan `APP_BASE_URL` HTTPS. `REMINDER_BATCH_SIZE` menerima integer 1–100.
 
 ## 3. Release sequence
 

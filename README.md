@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M5 — Mobile app** on top of the M1–M4 API and web foundation. The Expo app now covers authentication and the core application workflow; reminder delivery remains in M6 and deployment remains in M8.
+This repository currently implements **M6 — Reminder engine** on top of the M1–M5 API, web, and mobile foundation. Reminder CRUD, atomic scheduling, retry, and email-provider adapters are implemented; integration hardening remains in M7 and deployment remains in M8.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -107,3 +107,13 @@ See [M4 handoff](docs/HANDOFF_M4.md) for route coverage, validation, and the dat
 - The Expo export is verified for Android, iOS, and web. A real shared-account/data run still requires a reachable API, PostgreSQL, secrets, and a phone or emulator.
 
 See [M5 handoff](docs/HANDOFF_M5.md) for route coverage, security decisions, validation evidence, known external gates, and the M6 continuation prompt.
+
+## M6 Reminder engine
+
+- Authenticated reminder CRUD is ownership-scoped. A transaction-safe per-user quota limits active reminder work; pending reminders can be cancelled, and can be edited only before delivery starts.
+- Nest Schedule runs every five minutes. PostgreSQL row locking with `SKIP LOCKED` claims due reminders and freezes a minimum delivery payload atomically before delivery.
+- Failed sends return to `PENDING` for the next tick and stop as `FAILED` after three attempts.
+- Development uses a no-send adapter. Production uses the Resend HTTP adapter with a server-only key, a 10-second request timeout, and deterministic `Idempotency-Key` per reminder.
+- Email content uses the user's timezone, contains no interview notes or tokens, and links directly to the related application when present.
+
+See [M6 handoff](docs/HANDOFF_M6.md) for the implementation map, tests, security findings, environment contract, and remaining runtime gates.

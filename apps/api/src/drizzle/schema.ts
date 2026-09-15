@@ -20,7 +20,19 @@ import {
   reminderDeliveryStatus,
   reminderKind,
   workMode,
+  type ReminderKind,
 } from "@sei/shared";
+
+export interface ReminderDeliveryPayload {
+  to: string;
+  userDisplayName: string;
+  timezone: string;
+  applicationTitle: string | null;
+  organizationName: string | null;
+  applicationUrl: string | null;
+  dueAt: string;
+  reminderKind: ReminderKind;
+}
 
 export const applicationTypeEnum = pgEnum("application_type", applicationType);
 export const applicationStatusEnum = pgEnum(
@@ -170,6 +182,7 @@ export const reminders = pgTable(
       .default("PENDING"),
     lastErrorCode: varchar("last_error_code", { length: 120 }),
     providerMessageId: varchar("provider_message_id", { length: 255 }),
+    deliveryPayload: jsonb("delivery_payload").$type<ReminderDeliveryPayload>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

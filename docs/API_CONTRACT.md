@@ -101,6 +101,24 @@ Membuat application menyimpan record dan activity `CREATED` dalam satu transacti
 | PATCH/DELETE | `/reminders/:id`     | Edit/batalkan reminder pending                         |
 | GET          | `/dashboard/summary` | Counts per status, upcoming deadlines, recent activity |
 
+Semua endpoint reminder membutuhkan Bearer access token. Query dan mutation selalu dibatasi dengan `user_id`; reminder user lain mengembalikan 404 generik. `DELETE` tidak menghapus row, tetapi mengubah reminder `PENDING` menjadi `CANCELLED`.
+
+`POST /reminders` menerima:
+
+```json
+{
+  "applicationId": "00000000-0000-4000-8000-000000000002",
+  "kind": "FOLLOW_UP",
+  "dueAt": "2030-01-12T09:00:00.000Z"
+}
+```
+
+`applicationId` boleh `null` untuk custom reminder. Bila diisi, application wajib milik user dan belum di-soft-delete. `dueAt` wajib ISO 8601 dengan offset dan harus berada setelah waktu saat request diproses. Setiap user dapat memiliki maksimum 100 reminder aktif (`PENDING` + `PROCESSING`); create berikutnya mengembalikan `409 Conflict` sampai salah satu reminder menjadi `SENT`, `FAILED`, atau `CANCELLED`.
+
+`PATCH /reminders/:id` menerima sebagian dari `applicationId`, `kind`, dan `dueAt`, minimal satu field. Reminder hanya dapat diedit ketika berstatus `PENDING` dan `attemptCount === 0`; setelah delivery attempt dimulai, payload email telah dibekukan dan perubahan ditolak dengan `409 Conflict`. Reminder `PENDING` tetap dapat dibatalkan walaupun pernah dicoba. Status delivery, attempt count, error code, provider message ID, dan snapshot payload hanya dapat diubah oleh scheduler.
+
+`GET /reminders` menerima `status`, `page`, dan `limit`; default page 1, default limit 20, maksimum 100. Response memakai envelope pagination umum. Reminder DTO berisi `id`, `userId`, `applicationId`, `kind`, `dueAt`, `sentAt`, `attemptCount`, `deliveryStatus`, `lastErrorCode`, `providerMessageId`, dan `createdAt`.
+
 ## 5. Kontrak dan validasi
 
 - Semua input menggunakan Zod shared; backend tetap parse ulang input.
