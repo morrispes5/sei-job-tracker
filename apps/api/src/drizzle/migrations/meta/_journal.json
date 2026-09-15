@@ -15,6 +15,13 @@
       "when": 1789468143168,
       "tag": "0001_lowly_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789476550843,
+      "tag": "0002_tiny_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

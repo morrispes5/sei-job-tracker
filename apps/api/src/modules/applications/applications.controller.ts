@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Param,
   Patch,
   Post,
@@ -25,7 +26,10 @@ type AuthenticatedRequest = Request & {
 @Controller("applications")
 @UseGuards(AuthGuard("jwt"))
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) {}
+  constructor(
+    @Inject(ApplicationsService)
+    private readonly applicationsService: ApplicationsService,
+  ) {}
 
   @Get()
   list(

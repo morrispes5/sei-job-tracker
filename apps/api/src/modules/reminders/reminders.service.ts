@@ -23,8 +23,10 @@ import {
   REMINDER_DUE_IN_PAST,
   REMINDER_NOT_FOUND,
   REMINDER_NOT_PENDING,
+  REMINDER_STORAGE_LIMIT_REACHED,
   REMINDERS_REPOSITORY,
   ReminderActiveLimitError,
+  ReminderStorageLimitError,
 } from "./reminders.constants";
 import type {
   ReminderRecord,
@@ -72,6 +74,10 @@ export class RemindersService {
     } catch (error: unknown) {
       if (error instanceof ReminderActiveLimitError) {
         throw new ConflictException(REMINDER_ACTIVE_LIMIT_REACHED);
+      }
+
+      if (error instanceof ReminderStorageLimitError) {
+        throw new ConflictException(REMINDER_STORAGE_LIMIT_REACHED);
       }
 
       throw error;

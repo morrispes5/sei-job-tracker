@@ -31,6 +31,8 @@ sequenceDiagram
 - Logout mencabut refresh session aktif. Password change di fase berikutnya harus mencabut semua session.
 - Rate-limit register/login/refresh; respons login salah jangan membocorkan apakah email terdaftar.
 - CORS hanya origin web yang sah. Production HTTPS wajib.
+- Request register/login/refresh/logout wajib mengirim `X-Client-Platform: web|mobile`. Header ini juga mencegah form lintas origin sederhana membuat atau mengganti session web; client browser yang tidak dipercaya tetap dibatasi preflight CORS.
+- Release mobile wajib memakai `EXPO_PUBLIC_API_BASE_URL` HTTPS. HTTP hanya diterima pada build development dan host loopback/private LAN.
 
 ## 4. Authorization checklist
 
@@ -51,3 +53,4 @@ Jangan pernah mengambil record by `id` lalu hanya membandingkan ownership setela
 - `.env` tidak masuk git; sediakan `.env.example` tanpa nilai rahasia.
 - Error production tidak menampilkan stack trace ke client; log server memakai request ID.
 - Backup, domain email, dan credential Neon diatur terpisah dari source code.
+- Alokasi persisten dibatasi per user dan check-plus-insert diserialisasi dengan advisory transaction lock: maksimum 1.000 application sepanjang histori, 5.000 note, 2.000 contact, serta 1.000 reminder sepanjang histori. Batas total reminder terpisah dari batas 100 reminder aktif. Delete note/contact membebaskan kuota; soft-delete application dan status terminal reminder tetap dihitung agar satu tenant tidak dapat menghabiskan storage bersama lewat create/delete loop.

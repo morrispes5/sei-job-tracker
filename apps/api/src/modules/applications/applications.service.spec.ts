@@ -4,7 +4,16 @@ import { ZodError } from "zod";
 
 import type { ApplicationListQuery } from "@sei/shared";
 
-import { APPLICATION_NOT_FOUND } from "./applications.constants";
+import {
+  APPLICATION_CONTACT_MAX_PER_USER,
+  APPLICATION_CONTACT_STORAGE_LIMIT_REACHED,
+  APPLICATION_MAX_PER_USER,
+  APPLICATION_NOTE_MAX_PER_USER,
+  APPLICATION_NOTE_STORAGE_LIMIT_REACHED,
+  APPLICATION_NOT_FOUND,
+  APPLICATION_STORAGE_LIMIT_REACHED,
+  ApplicationStorageLimitError,
+} from "./applications.constants";
 import type {
   ActivityWriteInput,
   ApplicationActivityRecord,
@@ -108,6 +117,13 @@ class InMemoryApplicationsRepository implements ApplicationsRepositoryPort {
     input: CreateApplicationRecordInput,
     activity: ActivityWriteInput,
   ): Promise<ApplicationRecord> {
+    if (
+      this.applications.filter((item) => item.userId === input.userId).length >=
+      APPLICATION_MAX_PER_USER
+    ) {
+      throw new ApplicationStorageLimitError("application");
+    }
+
     const now = new Date();
     const application: ApplicationRecord = {
       id: randomUUID(),
@@ -167,10 +183,24 @@ class InMemoryApplicationsRepository implements ApplicationsRepositoryPort {
   }
 
   createNote(input: CreateNoteInput): Promise<ApplicationNoteRecord> {
+    const ownedApplicationIds = new Set(
+      this.applications
+        .filter((application) => application.userId === input.userId)
+        .map((application) => application.id),
+    );
+    const ownedNoteCount = this.notes.filter((note) =>
+      ownedApplicationIds.has(note.applicationId),
+    ).length;
+
+    if (ownedNoteCount >= APPLICATION_NOTE_MAX_PER_USER) {
+      throw new ApplicationStorageLimitError("note");
+    }
+
     const note: ApplicationNoteRecord = {
       id: randomUUID(),
       createdAt: new Date(),
-      ...input,
+      applicationId: input.applicationId,
+      body: input.body,
     };
     this.notes.push(note);
     return Promise.resolve(note);
@@ -215,9 +245,26 @@ class InMemoryApplicationsRepository implements ApplicationsRepositoryPort {
   }
 
   createContact(input: CreateContactInput): Promise<ApplicationContactRecord> {
+    const ownedApplicationIds = new Set(
+      this.applications
+        .filter((application) => application.userId === input.userId)
+        .map((application) => application.id),
+    );
+    const ownedContactCount = this.contacts.filter((contact) =>
+      ownedApplicationIds.has(contact.applicationId),
+    ).length;
+
+    if (ownedContactCount >= APPLICATION_CONTACT_MAX_PER_USER) {
+      throw new ApplicationStorageLimitError("contact");
+    }
+
     const contact: ApplicationContactRecord = {
       id: randomUUID(),
-      ...input,
+      applicationId: input.applicationId,
+      name: input.name,
+      role: input.role,
+      email: input.email,
+      profileUrl: input.profileUrl,
     };
     this.contacts.push(contact);
     return Promise.resolve(contact);
@@ -477,5 +524,51 @@ describe("ApplicationsService", () => {
     await expect(service.getById(userA, "not-a-uuid")).rejects.toBeInstanceOf(
       ZodError,
     );
+  });
+
+  it("bounds application, note, and contact storage per user", async () => {
+    const applicationLimit = createService();
+
+    for (let index = 0; index < APPLICATION_MAX_PER_USER; index += 1) {
+      await applicationLimit.service.create(userA, createInput());
+    }
+
+    await expect(
+      applicationLimit.service.create(userA, createInput()),
+    ).rejects.toThrow(APPLICATION_STORAGE_LIMIT_REACHED);
+    await expect(
+      applicationLimit.service.create(userB, createInput()),
+    ).resolves.toBeDefined();
+
+    const childLimit = createService();
+    const application = await childLimit.service.create(userA, createInput());
+
+    for (let index = 0; index < APPLICATION_NOTE_MAX_PER_USER; index += 1) {
+      childLimit.repository.notes.push({
+        id: randomUUID(),
+        applicationId: application.id,
+        body: "bounded",
+        createdAt: new Date(),
+      });
+    }
+    await expect(
+      childLimit.service.createNote(userA, application.id, { body: "blocked" }),
+    ).rejects.toThrow(APPLICATION_NOTE_STORAGE_LIMIT_REACHED);
+
+    for (let index = 0; index < APPLICATION_CONTACT_MAX_PER_USER; index += 1) {
+      childLimit.repository.contacts.push({
+        id: randomUUID(),
+        applicationId: application.id,
+        name: "Bounded",
+        role: null,
+        email: null,
+        profileUrl: null,
+      });
+    }
+    await expect(
+      childLimit.service.createContact(userA, application.id, {
+        name: "Blocked",
+      }),
+    ).rejects.toThrow(APPLICATION_CONTACT_STORAGE_LIMIT_REACHED);
   });
 });

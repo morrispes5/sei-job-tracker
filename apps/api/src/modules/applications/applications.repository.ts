@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
   asc,
@@ -11,6 +11,7 @@ import {
   isNull,
   lte,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 
@@ -27,6 +28,12 @@ import {
   applicationNotes,
   applications,
 } from "../../drizzle/schema";
+import {
+  APPLICATION_CONTACT_MAX_PER_USER,
+  APPLICATION_MAX_PER_USER,
+  APPLICATION_NOTE_MAX_PER_USER,
+  ApplicationStorageLimitError,
+} from "./applications.constants";
 export type ApplicationRecord = typeof applications.$inferSelect;
 export type ApplicationNoteRecord = typeof applicationNotes.$inferSelect;
 export type ApplicationContactRecord = typeof applicationContacts.$inferSelect;
@@ -78,11 +85,13 @@ export interface ActivityWriteInput {
 }
 
 export interface CreateNoteInput {
+  userId: string;
   applicationId: string;
   body: string;
 }
 
 export interface CreateContactInput {
+  userId: string;
   applicationId: string;
   name: string;
   role: string | null;
@@ -153,7 +162,9 @@ function sanitizeSearch(value: string): string {
 
 @Injectable()
 export class ApplicationsRepository implements ApplicationsRepositoryPort {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
 
   async list(
     userId: string,
@@ -202,6 +213,18 @@ export class ApplicationsRepository implements ApplicationsRepositoryPort {
     activity: ActivityWriteInput,
   ): Promise<ApplicationRecord> {
     return this.database.db.transaction(async (transaction) => {
+      await transaction.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.userId}, 1))`,
+      );
+      const [usage] = await transaction
+        .select({ total: count() })
+        .from(applications)
+        .where(eq(applications.userId, input.userId));
+
+      if (Number(usage?.total ?? 0) >= APPLICATION_MAX_PER_USER) {
+        throw new ApplicationStorageLimitError("application");
+      }
+
       const [application] = await transaction
         .insert(applications)
         .values(input)
@@ -268,10 +291,30 @@ export class ApplicationsRepository implements ApplicationsRepositoryPort {
   }
 
   async createNote(input: CreateNoteInput): Promise<ApplicationNoteRecord> {
-    const [note] = await this.database.db
-      .insert(applicationNotes)
-      .values(input)
-      .returning();
+    const note = await this.database.db.transaction(async (transaction) => {
+      await transaction.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.userId}, 1))`,
+      );
+      const [usage] = await transaction
+        .select({ total: count() })
+        .from(applicationNotes)
+        .innerJoin(
+          applications,
+          eq(applications.id, applicationNotes.applicationId),
+        )
+        .where(eq(applications.userId, input.userId));
+
+      if (Number(usage?.total ?? 0) >= APPLICATION_NOTE_MAX_PER_USER) {
+        throw new ApplicationStorageLimitError("note");
+      }
+
+      const [created] = await transaction
+        .insert(applicationNotes)
+        .values({ applicationId: input.applicationId, body: input.body })
+        .returning();
+
+      return created;
+    });
 
     if (!note) {
       throw new Error("Note insert did not return a record.");
@@ -326,10 +369,36 @@ export class ApplicationsRepository implements ApplicationsRepositoryPort {
   async createContact(
     input: CreateContactInput,
   ): Promise<ApplicationContactRecord> {
-    const [contact] = await this.database.db
-      .insert(applicationContacts)
-      .values(input)
-      .returning();
+    const contact = await this.database.db.transaction(async (transaction) => {
+      await transaction.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.userId}, 1))`,
+      );
+      const [usage] = await transaction
+        .select({ total: count() })
+        .from(applicationContacts)
+        .innerJoin(
+          applications,
+          eq(applications.id, applicationContacts.applicationId),
+        )
+        .where(eq(applications.userId, input.userId));
+
+      if (Number(usage?.total ?? 0) >= APPLICATION_CONTACT_MAX_PER_USER) {
+        throw new ApplicationStorageLimitError("contact");
+      }
+
+      const [created] = await transaction
+        .insert(applicationContacts)
+        .values({
+          applicationId: input.applicationId,
+          name: input.name,
+          role: input.role,
+          email: input.email,
+          profileUrl: input.profileUrl,
+        })
+        .returning();
+
+      return created;
+    });
 
     if (!contact) {
       throw new Error("Contact insert did not return a record.");

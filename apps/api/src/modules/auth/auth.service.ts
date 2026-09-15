@@ -54,6 +54,7 @@ interface OpaqueRefreshToken {
 export class AuthService {
   constructor(
     @Inject(AUTH_REPOSITORY) private readonly repository: AuthRepositoryPort,
+    @Inject(JwtService)
     private readonly jwtService: JwtService,
   ) {}
 

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { DatabaseService } from "../../drizzle/database.service";
@@ -40,7 +40,9 @@ export interface AuthRepositoryPort {
 
 @Injectable()
 export class AuthRepository implements AuthRepositoryPort {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
 
   async findUserByEmail(email: string): Promise<UserRecord | undefined> {
     return this.database.db.query.users.findFirst({

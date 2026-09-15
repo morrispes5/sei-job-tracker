@@ -5,8 +5,14 @@ import type { ReminderListQuery } from "@sei/shared";
 import {
   ReminderActiveLimitError,
   REMINDER_MAX_ACTIVE_PER_USER,
+  REMINDER_MAX_TOTAL_PER_USER,
+  ReminderStorageLimitError,
   REMINDER_MAX_ATTEMPTS,
 } from "./reminders.constants";
+import {
+  isReminderProcessingStale,
+  REMINDER_STALE_PROCESSING_ERROR_CODE,
+} from "./reminder-recovery.policy";
 import type {
   ClaimedReminder,
   ReminderCreateRecordInput,
@@ -66,6 +72,7 @@ export class InMemoryRemindersRepository implements RemindersRepositoryPort {
           | "lastErrorCode"
           | "providerMessageId"
           | "deliveryPayload"
+          | "lastAttemptStartedAt"
           | "createdAt"
         >
       >,
@@ -82,6 +89,7 @@ export class InMemoryRemindersRepository implements RemindersRepositoryPort {
       lastErrorCode: input.lastErrorCode ?? null,
       providerMessageId: input.providerMessageId ?? null,
       deliveryPayload: input.deliveryPayload ?? null,
+      lastAttemptStartedAt: input.lastAttemptStartedAt ?? null,
       createdAt: input.createdAt ?? new Date(),
     };
     this.reminders.push(reminder);
@@ -135,6 +143,14 @@ export class InMemoryRemindersRepository implements RemindersRepositoryPort {
   }
 
   create(input: ReminderCreateRecordInput): Promise<ReminderRecord> {
+    const totalCount = this.reminders.filter(
+      (reminder) => reminder.userId === input.userId,
+    ).length;
+
+    if (totalCount >= REMINDER_MAX_TOTAL_PER_USER) {
+      throw new ReminderStorageLimitError();
+    }
+
     const activeCount = this.reminders.filter(
       (reminder) =>
         reminder.userId === input.userId &&
@@ -225,6 +241,7 @@ export class InMemoryRemindersRepository implements RemindersRepositoryPort {
       reminder.deliveryStatus = "PROCESSING";
       reminder.attemptCount += 1;
       reminder.lastErrorCode = null;
+      reminder.lastAttemptStartedAt = now;
       const application = reminder.applicationId
         ? this.applications.get(reminder.applicationId)
         : undefined;
@@ -251,6 +268,23 @@ export class InMemoryRemindersRepository implements RemindersRepositoryPort {
     });
 
     return Promise.resolve(claimed);
+  }
+
+  recoverStaleProcessing(now: Date): Promise<number> {
+    let recovered = 0;
+
+    for (const reminder of this.reminders) {
+      if (
+        reminder.deliveryStatus === "PROCESSING" &&
+        isReminderProcessingStale(reminder.lastAttemptStartedAt, now)
+      ) {
+        reminder.deliveryStatus = "FAILED";
+        reminder.lastErrorCode = REMINDER_STALE_PROCESSING_ERROR_CODE;
+        recovered += 1;
+      }
+    }
+
+    return Promise.resolve(recovered);
   }
 
   markSent(

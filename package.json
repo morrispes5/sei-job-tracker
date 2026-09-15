@@ -13,6 +13,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:integration": "pnpm --filter @sei/api test:integration",
     "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx,css,json}\" \"*.{json,mjs,yaml,yml}\" \".github/**/*.yml\""
   },
   "devDependencies": {

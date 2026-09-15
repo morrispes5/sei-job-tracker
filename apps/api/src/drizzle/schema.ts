@@ -183,11 +183,18 @@ export const reminders = pgTable(
     lastErrorCode: varchar("last_error_code", { length: 120 }),
     providerMessageId: varchar("provider_message_id", { length: 255 }),
     deliveryPayload: jsonb("delivery_payload").$type<ReminderDeliveryPayload>(),
+    lastAttemptStartedAt: timestamp("last_attempt_started_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
     index("reminders_delivery_due_idx").on(table.deliveryStatus, table.dueAt),
+    index("reminders_processing_started_idx").on(
+      table.deliveryStatus,
+      table.lastAttemptStartedAt,
+    ),
   ],
 );

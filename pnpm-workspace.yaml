@@ -10,6 +10,17 @@ onlyBuiltDependencies:
 allowBuilds:
   esbuild: true
   argon2: true
+  "@embedded-postgres/linux-x64": true
+  "@embedded-postgres/windows-x64": true
 
 overrides:
   "@types/react-dom": 19.1.9
+  image-size: 2.0.3
+  multer: 2.3.0
+  postcss: 8.5.28
+
+minimumReleaseAgeExclude:
+  - image-size@2.0.3
+
+patchedDependencies:
+  metro@0.83.3: patches/metro@0.83.3.patch

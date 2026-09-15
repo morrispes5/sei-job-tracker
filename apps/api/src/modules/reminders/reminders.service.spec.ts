@@ -6,8 +6,10 @@ import {
   REMINDER_ACTIVE_LIMIT_REACHED,
   REMINDER_DUE_IN_PAST,
   REMINDER_MAX_ACTIVE_PER_USER,
+  REMINDER_MAX_TOTAL_PER_USER,
   REMINDER_NOT_FOUND,
   REMINDER_NOT_PENDING,
+  REMINDER_STORAGE_LIMIT_REACHED,
 } from "./reminders.constants";
 import { RemindersService } from "./reminders.service";
 import { InMemoryRemindersRepository } from "./reminders.test-support";
@@ -179,6 +181,38 @@ describe("RemindersService", () => {
         dueAt: "2026-09-17T12:00:00.000Z",
       }),
     ).resolves.toBeDefined();
+    await expect(
+      service.create(userB, {
+        applicationId: null,
+        kind: "CUSTOM",
+        dueAt: "2026-09-17T12:00:00.000Z",
+      }),
+    ).resolves.toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("bounds total reminder history even when old rows are terminal", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-15T12:00:00.000Z"));
+    const { repository, service } = createService();
+
+    for (let index = 0; index < REMINDER_MAX_TOTAL_PER_USER; index += 1) {
+      repository.addReminder({
+        userId: userA,
+        applicationId: null,
+        kind: "CUSTOM",
+        dueAt: new Date("2026-09-16T12:00:00.000Z"),
+        deliveryStatus: "CANCELLED",
+      });
+    }
+
+    await expect(
+      service.create(userA, {
+        applicationId: null,
+        kind: "CUSTOM",
+        dueAt: "2026-09-17T12:00:00.000Z",
+      }),
+    ).rejects.toThrow(REMINDER_STORAGE_LIMIT_REACHED);
     await expect(
       service.create(userB, {
         applicationId: null,

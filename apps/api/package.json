@@ -18,7 +18,8 @@
     "predb:seed": "pnpm --filter @sei/shared build",
     "predb:studio": "pnpm --filter @sei/shared build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "tsx src/integration/run-postgres-e2e.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
@@ -30,7 +31,7 @@
     "@sei/shared": "workspace:*",
     "argon2": "^0.44.0",
     "cookie-parser": "^1.4.7",
-    "drizzle-orm": "^0.44.5",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -45,6 +46,7 @@
     "@types/node": "^22.15.30",
     "@types/passport-jwt": "^4.0.1",
     "drizzle-kit": "^0.31.4",
+    "embedded-postgres": "17.10.0-beta.17",
     "tsx": "^4.20.5"
   }
 }

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  Inject,
   Post,
   Req,
   Res,
@@ -26,7 +27,9 @@ type AuthenticatedRequest = Request & {
 @Controller("auth")
 export class AuthController {
   constructor(
+    @Inject(AuthService)
     private readonly authService: AuthService,
+    @Inject(AuthRateLimiter)
     private readonly rateLimiter: AuthRateLimiter,
   ) {}
 
@@ -100,7 +103,7 @@ export class AuthController {
   }
 
   private getPlatform(platformHeader: string | undefined): ClientPlatform {
-    const result = clientPlatformSchema.safeParse(platformHeader ?? "web");
+    const result = clientPlatformSchema.safeParse(platformHeader);
 
     if (!result.success) {
       throw new BadRequestException(

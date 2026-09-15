@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M6 — Reminder engine** on top of the M1–M5 API, web, and mobile foundation. Reminder CRUD, atomic scheduling, retry, and email-provider adapters are implemented; integration hardening remains in M7 and deployment remains in M8.
+This repository currently implements **M7 — Integration tests and hardening** on top of the M1–M6 API, web, mobile, and reminder foundation. Real disposable-PostgreSQL E2E, stale reminder recovery, tenant storage bounds, transport hardening, dependency review, and critical UI smoke checks are implemented; deployment remains a separate M8 decision.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -117,3 +117,13 @@ See [M5 handoff](docs/HANDOFF_M5.md) for route coverage, security decisions, val
 - Email content uses the user's timezone, contains no interview notes or tokens, and links directly to the related application when present.
 
 See [M6 handoff](docs/HANDOFF_M6.md) for the implementation map, tests, security findings, environment contract, and remaining runtime gates.
+
+## M7 Integration tests and hardening
+
+- `pnpm test:integration` starts an ephemeral local PostgreSQL 17 cluster, applies all Drizzle migrations, runs authenticated HTTP and scheduler E2E, then removes the isolated temporary cluster.
+- The destructive E2E setup refuses any database target that is not the exact loopback `job_tracker_e2e` database and requires `DATABASE_URL` to equal `TEST_DATABASE_URL`.
+- Auth, owner isolation, application/reminder CRUD, concurrent claim, retry, provider idempotency, stale `PROCESSING` recovery, and transaction-safe storage quotas are covered against real PostgreSQL.
+- Release mobile builds require an explicit HTTPS API URL. Private-LAN HTTP remains available only for development builds.
+- Session-creating auth requests require the documented `X-Client-Platform` header, blocking simple cross-site form login attempts.
+
+See [M7 handoff](docs/HANDOFF_M7.md) for exact evidence, security decisions, known P2 items, and external gates.

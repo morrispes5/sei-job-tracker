@@ -24,10 +24,12 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
 
-    if (exception instanceof ZodError) {
+    const zodIssues = this.getZodIssues(exception);
+
+    if (zodIssues) {
       const fields: Record<string, string[]> = {};
 
-      for (const issue of exception.issues) {
+      for (const issue of zodIssues) {
         const field = issue.path.join(".") || "root";
         fields[field] ??= [];
         fields[field].push(issue.message);
@@ -63,6 +65,43 @@ export class ApiExceptionFilter implements ExceptionFilter {
         message: "Terjadi kesalahan internal.",
       },
     });
+  }
+
+  private getZodIssues(
+    exception: unknown,
+  ): ReadonlyArray<{ path: (string | number)[]; message: string }> | undefined {
+    if (exception instanceof ZodError) {
+      return exception.issues;
+    }
+
+    if (
+      !exception ||
+      typeof exception !== "object" ||
+      !("name" in exception) ||
+      exception.name !== "ZodError" ||
+      !("issues" in exception) ||
+      !Array.isArray(exception.issues)
+    ) {
+      return undefined;
+    }
+
+    const issues = exception.issues.filter(
+      (issue): issue is { path: (string | number)[]; message: string } =>
+        Boolean(
+          issue &&
+          typeof issue === "object" &&
+          "path" in issue &&
+          Array.isArray(issue.path) &&
+          issue.path.every(
+            (segment: unknown) =>
+              typeof segment === "string" || typeof segment === "number",
+          ) &&
+          "message" in issue &&
+          typeof issue.message === "string",
+        ),
+    );
+
+    return issues.length === exception.issues.length ? issues : undefined;
   }
 
   private send(

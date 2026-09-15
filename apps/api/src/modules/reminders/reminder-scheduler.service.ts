@@ -35,6 +35,8 @@ export class ReminderSchedulerService {
   }
 
   async processDue(now: Date): Promise<number> {
+    await this.repository.recoverStaleProcessing(now);
+
     const reminders = await this.repository.claimDue(
       now,
       this.config.batchSize,

@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { EmailProvider, ReminderEmailInput } from "./email.provider";
 import { buildReminderEmailText, EmailProviderError } from "./email.provider";
 import { ReminderSchedulerService } from "./reminder-scheduler.service";
+import {
+  REMINDER_PROCESSING_STALE_AFTER_MS,
+  REMINDER_STALE_PROCESSING_ERROR_CODE,
+} from "./reminder-recovery.policy";
 import { InMemoryRemindersRepository } from "./reminders.test-support";
 
 const userId = "11111111-1111-4111-8111-111111111111";
@@ -178,5 +182,42 @@ describe("ReminderSchedulerService", () => {
 
     expect(await scheduler.processDue(dueAt)).toBe(2);
     expect(provider.sends).toHaveLength(2);
+  });
+
+  it("fails stale PROCESSING rows closed without attempting another send", async () => {
+    const { provider, repository, scheduler } = createScheduler();
+    const reminder = repository.addReminder({
+      userId,
+      applicationId,
+      kind: "FOLLOW_UP",
+      dueAt,
+      deliveryStatus: "PROCESSING",
+      attemptCount: 1,
+      lastAttemptStartedAt: new Date(
+        dueAt.getTime() - REMINDER_PROCESSING_STALE_AFTER_MS,
+      ),
+    });
+
+    expect(await scheduler.processDue(dueAt)).toBe(0);
+    expect(provider.sends).toHaveLength(0);
+    expect(reminder.deliveryStatus).toBe("FAILED");
+    expect(reminder.lastErrorCode).toBe(REMINDER_STALE_PROCESSING_ERROR_CODE);
+  });
+
+  it("leaves a fresh PROCESSING row untouched", async () => {
+    const { provider, repository, scheduler } = createScheduler();
+    const reminder = repository.addReminder({
+      userId,
+      applicationId,
+      kind: "FOLLOW_UP",
+      dueAt,
+      deliveryStatus: "PROCESSING",
+      attemptCount: 1,
+      lastAttemptStartedAt: new Date(dueAt.getTime() - 60_000),
+    });
+
+    expect(await scheduler.processDue(dueAt)).toBe(0);
+    expect(provider.sends).toHaveLength(0);
+    expect(reminder.deliveryStatus).toBe("PROCESSING");
   });
 });

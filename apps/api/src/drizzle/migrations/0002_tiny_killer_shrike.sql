@@ -1,0 +1,2 @@
+ALTER TABLE "reminders" ADD COLUMN "last_attempt_started_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "reminders_processing_started_idx" ON "reminders" USING btree ("delivery_status","last_attempt_started_at");

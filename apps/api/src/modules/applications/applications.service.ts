@@ -21,9 +21,13 @@ import {
 
 import {
   APPLICATION_ALREADY_ARCHIVED,
+  APPLICATION_CONTACT_STORAGE_LIMIT_REACHED,
+  APPLICATION_NOTE_STORAGE_LIMIT_REACHED,
   APPLICATION_NOT_ARCHIVED,
   APPLICATION_NOT_FOUND,
+  APPLICATION_STORAGE_LIMIT_REACHED,
   APPLICATIONS_REPOSITORY,
+  ApplicationStorageLimitError,
   CONTACT_NOT_FOUND,
   NOTE_NOT_FOUND,
 } from "./applications.constants";
@@ -160,17 +164,23 @@ export class ApplicationsService {
       data.status,
       data.appliedAt,
     );
-    const application = await this.repository.createWithActivity(
-      this.toCreateRecord(userId, data, appliedAt, deadlineAt),
-      {
-        type: "CREATED",
-        metadata: {
-          type: data.type,
-          status: data.status,
-          title: data.title,
+    let application: ApplicationRecord;
+
+    try {
+      application = await this.repository.createWithActivity(
+        this.toCreateRecord(userId, data, appliedAt, deadlineAt),
+        {
+          type: "CREATED",
+          metadata: {
+            type: data.type,
+            status: data.status,
+            title: data.title,
+          },
         },
-      },
-    );
+      );
+    } catch (error: unknown) {
+      this.rethrowStorageLimit(error);
+    }
 
     return this.toApplicationDto(application);
   }
@@ -303,10 +313,17 @@ export class ApplicationsService {
       applicationId,
     );
     const data = applicationNoteBodySchema.parse(rawInput);
-    const note = await this.repository.createNote({
-      applicationId: application.id,
-      body: data.body,
-    });
+    let note: ApplicationNoteRecord;
+
+    try {
+      note = await this.repository.createNote({
+        userId,
+        applicationId: application.id,
+        body: data.body,
+      });
+    } catch (error: unknown) {
+      this.rethrowStorageLimit(error);
+    }
 
     return this.toNoteDto(note);
   }
@@ -380,13 +397,20 @@ export class ApplicationsService {
       applicationId,
     );
     const data = applicationContactCreateSchema.parse(rawInput);
-    const contact = await this.repository.createContact({
-      applicationId: application.id,
-      name: data.name,
-      role: data.role ?? null,
-      email: data.email ?? null,
-      profileUrl: data.profileUrl ?? null,
-    });
+    let contact: ApplicationContactRecord;
+
+    try {
+      contact = await this.repository.createContact({
+        userId,
+        applicationId: application.id,
+        name: data.name,
+        role: data.role ?? null,
+        email: data.email ?? null,
+        profileUrl: data.profileUrl ?? null,
+      });
+    } catch (error: unknown) {
+      this.rethrowStorageLimit(error);
+    }
 
     return this.toContactDto(contact);
   }
@@ -476,6 +500,20 @@ export class ApplicationsService {
     }
 
     return application;
+  }
+
+  private rethrowStorageLimit(error: unknown): never {
+    if (!(error instanceof ApplicationStorageLimitError)) {
+      throw error;
+    }
+
+    const messages = {
+      application: APPLICATION_STORAGE_LIMIT_REACHED,
+      note: APPLICATION_NOTE_STORAGE_LIMIT_REACHED,
+      contact: APPLICATION_CONTACT_STORAGE_LIMIT_REACHED,
+    } satisfies Record<ApplicationStorageLimitError["resource"], string>;
+
+    throw new ConflictException(messages[error.resource]);
   }
 
   private parseId(value: string): string {

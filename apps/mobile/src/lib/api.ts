@@ -5,9 +5,74 @@ import {
   type AuthRegisterInput,
 } from "@sei/shared";
 
-export const apiBaseUrl = (
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3000/api/v1"
-).replace(/\/$/, "");
+function isPrivateDevelopmentHost(hostname: string): boolean {
+  if (hostname === "localhost" || hostname === "::1") {
+    return true;
+  }
+
+  const octets = hostname.split(".").map(Number);
+
+  if (
+    octets.length !== 4 ||
+    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+  ) {
+    return false;
+  }
+
+  return (
+    octets[0] === 127 ||
+    octets[0] === 10 ||
+    (octets[0] === 192 && octets[1] === 168) ||
+    (octets[0] === 172 && (octets[1] ?? 0) >= 16 && (octets[1] ?? 0) <= 31)
+  );
+}
+
+export function resolveMobileApiBaseUrl(
+  configuredUrl: string | undefined,
+  isDevelopment: boolean,
+): string {
+  const value =
+    configuredUrl ??
+    (isDevelopment ? "http://localhost:3000/api/v1" : undefined);
+
+  if (!value) {
+    throw new Error("EXPO_PUBLIC_API_BASE_URL is required for release builds.");
+  }
+
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("EXPO_PUBLIC_API_BASE_URL must be a valid HTTP(S) URL.");
+  }
+
+  if (url.protocol === "https:") {
+    return url.toString().replace(/\/$/, "");
+  }
+
+  if (
+    url.protocol !== "http:" ||
+    !isDevelopment ||
+    !isPrivateDevelopmentHost(url.hostname)
+  ) {
+    throw new Error(
+      "EXPO_PUBLIC_API_BASE_URL must use HTTPS; HTTP is allowed only for private development hosts.",
+    );
+  }
+
+  return url.toString().replace(/\/$/, "");
+}
+
+const isDevelopmentBuild =
+  typeof __DEV__ === "boolean"
+    ? __DEV__
+    : process.env.NODE_ENV !== "production";
+
+export const apiBaseUrl = resolveMobileApiBaseUrl(
+  process.env.EXPO_PUBLIC_API_BASE_URL,
+  isDevelopmentBuild,
+);
 
 interface ApiErrorPayload {
   error?: {

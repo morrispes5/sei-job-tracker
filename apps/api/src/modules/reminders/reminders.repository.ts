@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
   asc,
@@ -30,7 +30,13 @@ import {
   ReminderActiveLimitError,
   REMINDER_MAX_ACTIVE_PER_USER,
   REMINDER_MAX_ATTEMPTS,
+  REMINDER_MAX_TOTAL_PER_USER,
+  ReminderStorageLimitError,
 } from "./reminders.constants";
+import {
+  REMINDER_PROCESSING_STALE_AFTER_MS,
+  REMINDER_STALE_PROCESSING_ERROR_CODE,
+} from "./reminder-recovery.policy";
 
 export type ReminderRecord = typeof reminders.$inferSelect;
 
@@ -82,6 +88,7 @@ export interface RemindersRepositoryPort {
     limit: number,
     appBaseUrl: string,
   ): Promise<ClaimedReminder[]>;
+  recoverStaleProcessing(now: Date): Promise<number>;
   markSent(
     reminderId: string,
     providerMessageId: string,
@@ -96,7 +103,9 @@ export interface RemindersRepositoryPort {
 
 @Injectable()
 export class RemindersRepository implements RemindersRepositoryPort {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
 
   async list(
     userId: string,
@@ -161,6 +170,15 @@ export class RemindersRepository implements RemindersRepositoryPort {
       await transaction.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${input.userId}, 0))`,
       );
+
+      const [totalRow] = await transaction
+        .select({ total: count() })
+        .from(reminders)
+        .where(eq(reminders.userId, input.userId));
+
+      if (Number(totalRow?.total ?? 0) >= REMINDER_MAX_TOTAL_PER_USER) {
+        throw new ReminderStorageLimitError();
+      }
 
       const [activeRow] = await transaction
         .select({ total: count() })
@@ -250,6 +268,7 @@ export class RemindersRepository implements RemindersRepositoryPort {
           lastErrorCode: reminders.lastErrorCode,
           providerMessageId: reminders.providerMessageId,
           deliveryPayload: reminders.deliveryPayload,
+          lastAttemptStartedAt: reminders.lastAttemptStartedAt,
           createdAt: reminders.createdAt,
           userEmail: users.email,
           userDisplayName: users.displayName,
@@ -294,6 +313,7 @@ export class RemindersRepository implements RemindersRepositoryPort {
             attemptCount: sql`${reminders.attemptCount} + 1`,
             lastErrorCode: null,
             deliveryPayload,
+            lastAttemptStartedAt: now,
           })
           .where(
             and(
@@ -310,6 +330,28 @@ export class RemindersRepository implements RemindersRepositoryPort {
 
       return claimed;
     });
+  }
+
+  async recoverStaleProcessing(now: Date): Promise<number> {
+    const cutoff = new Date(now.getTime() - REMINDER_PROCESSING_STALE_AFTER_MS);
+    const recovered = await this.database.db
+      .update(reminders)
+      .set({
+        deliveryStatus: "FAILED",
+        lastErrorCode: REMINDER_STALE_PROCESSING_ERROR_CODE,
+      })
+      .where(
+        and(
+          eq(reminders.deliveryStatus, "PROCESSING"),
+          or(
+            isNull(reminders.lastAttemptStartedAt),
+            lte(reminders.lastAttemptStartedAt, cutoff),
+          ),
+        ),
+      )
+      .returning({ id: reminders.id });
+
+    return recovered.length;
   }
 
   private createDeliveryPayload(
