@@ -1,5 +1,6 @@
 import type { ReminderKind } from "@sei/shared";
 
+import { readAppEnvironment } from "../../common/config/app-environment";
 import { EMAIL_PROVIDER_REQUEST_TIMEOUT_MS } from "./reminders.constants";
 
 export interface ReminderEmailInput {
@@ -183,15 +184,15 @@ export class ResendEmailProvider implements EmailProvider {
 export function createEmailProvider(
   environment: NodeJS.ProcessEnv = process.env,
 ): EmailProvider {
+  const appEnvironment = readAppEnvironment(environment);
   const configured = environment.EMAIL_PROVIDER;
   const provider =
-    configured ??
-    (environment.NODE_ENV === "production" ? undefined : "development");
+    configured ?? (appEnvironment === "production" ? undefined : "development");
 
   if (provider === "development") {
-    if (environment.NODE_ENV === "production") {
+    if (appEnvironment === "production") {
       throw new Error(
-        "Development email provider cannot be used in production.",
+        "Development email provider cannot be used when APP_ENV=production.",
       );
     }
 
@@ -212,6 +213,6 @@ export function createEmailProvider(
   }
 
   throw new Error(
-    "EMAIL_PROVIDER must be development or resend; production requires resend.",
+    "EMAIL_PROVIDER must be development or resend; APP_ENV=production requires resend.",
   );
 }

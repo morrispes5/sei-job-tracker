@@ -46,7 +46,7 @@
 - [ ] Desktop, tablet, dan mobile tidak memotong data penting (mobile-width browser smoke lulus; real tablet/phone tetap external gate).
 - [x] Kontras status dan focus state memenuhi aksesibilitas dasar (visual smoke dan focus styles source review).
 
-## 4. M7 executable evidence
+## 3. M7 executable evidence
 
 - `pnpm test:integration` memakai PostgreSQL 17 disposable nyata, bukan repository mock atau SQLite.
 - Harness menolak target selain loopback database bernama `job_tracker_e2e`, lalu menjalankan migration sebelum E2E.
@@ -54,6 +54,14 @@
 - Browser smoke membuktikan halaman register/login merender, validasi required tampil, navigasi auth bekerja, dan route `/applications` tanpa session kembali ke login.
 - Audit dependency dijalankan terhadap registry dengan gate `--audit-level high`; advisory high harus nol. Advisory moderate yang tersisa dicatat sebagai P2 di handoff.
 
-## 3. Release gate
+## 4. M8 deployment evidence
+
+- Unit test health membuktikan respons `ok` baru diberikan setelah query PostgreSQL berhasil.
+- Integration test memanggil `/api/v1/health` terhadap PostgreSQL disposable yang telah dimigrasikan.
+- Smoke runner menolak HTTP serta URL dengan credential/query/fragment, lalu memeriksa respons API persis `{ "status": "ok" }` dan shell HTML Sei.
+- CI memvalidasi syntax/config smoke runner, dependency audit high, Drizzle schema, dan build kedua container image.
+- Gate operasional M8 baru hijau setelah migration pada Neon non-production dan `pnpm smoke:preview` terhadap URL HTTPS nyata lulus.
+
+## 5. Release gate
 
 Sebuah milestone hanya selesai bila lint, typecheck, test relevan, migration check, dan manual smoke flow lulus. Bug P0/P1 harus diperbaiki sebelum production; P2 harus dicatat sebagai issue berprioritas.

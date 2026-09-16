@@ -11,10 +11,12 @@
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
+    "smoke:check": "node --check scripts/preview-smoke.mjs",
+    "smoke:preview": "node scripts/preview-smoke.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "pnpm --filter @sei/api test:integration",
-    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx,css,json}\" \"*.{json,mjs,yaml,yml}\" \".github/**/*.yml\""
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx,css,json}\" \"scripts/**/*.{js,mjs}\" \"*.{json,mjs,yaml,yml}\" \".github/**/*.yml\""
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

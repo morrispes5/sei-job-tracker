@@ -1,4 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["test", "dist", "node_modules"]
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "paths": {
+      "@sei/shared": ["../../packages/shared/dist/index.d.ts"]
+    },
+    "rootDir": "src"
+  },
+  "exclude": ["dist", "node_modules", "src/**/*.spec.ts", "src/integration/**"]
 }

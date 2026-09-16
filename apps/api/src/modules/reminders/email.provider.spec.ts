@@ -46,16 +46,27 @@ describe("EmailProvider", () => {
     expect(String(init?.body)).not.toContain("server-secret");
   });
 
-  it("uses a no-send development adapter outside production", () => {
-    expect(createEmailProvider({ NODE_ENV: "development" })).toBeInstanceOf(
-      DevelopmentEmailProvider,
-    );
+  it("allows no-send preview email but fails closed in production", () => {
+    expect(
+      createEmailProvider({
+        APP_ENV: "preview",
+        EMAIL_PROVIDER: "development",
+        NODE_ENV: "production",
+      }),
+    ).toBeInstanceOf(DevelopmentEmailProvider);
     expect(() =>
       createEmailProvider({
+        APP_ENV: "production",
         NODE_ENV: "production",
         EMAIL_PROVIDER: "development",
       }),
-    ).toThrow("cannot be used in production");
+    ).toThrow("APP_ENV=production");
+    expect(() =>
+      createEmailProvider({
+        APP_ENV: "prod",
+        EMAIL_PROVIDER: "resend",
+      }),
+    ).toThrow("APP_ENV must be local, preview, or production");
   });
 
   it("falls back to UTC for an invalid stored timezone", () => {
