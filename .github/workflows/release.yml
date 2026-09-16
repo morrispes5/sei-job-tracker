@@ -1,0 +1,66 @@
+name: Release gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target environment
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  release-gate:
+    name: Validate and smoke ${{ inputs.target }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm test:integration
+      - run: pnpm build
+      - run: pnpm --filter @sei/api db:check
+      - run: pnpm smoke:check
+      - run: pnpm audit --prod --audit-level high
+      - run: docker build --file apps/api/Dockerfile --tag sei-api:release .
+      - run: >-
+          docker build
+          --file apps/web/Dockerfile
+          --build-arg VITE_API_BASE_URL=${{ vars.API_BASE_URL }}
+          --tag sei-web:release
+          .
+      - name: Require target smoke URLs
+        run: |
+          test -n "$API_BASE_URL" || { echo "Set the API_BASE_URL variable on the ${{ inputs.target }} GitHub environment."; exit 1; }
+          test -n "$WEB_URL" || { echo "Set the WEB_URL variable on the ${{ inputs.target }} GitHub environment."; exit 1; }
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          WEB_URL: ${{ vars.WEB_URL }}
+      - name: Smoke preview target
+        if: inputs.target == 'preview'
+        run: pnpm smoke:preview
+        env:
+          PREVIEW_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          PREVIEW_WEB_URL: ${{ vars.WEB_URL }}
+      - name: Smoke production target
+        if: inputs.target == 'production'
+        run: pnpm smoke:production
+        env:
+          PRODUCTION_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          PRODUCTION_WEB_URL: ${{ vars.WEB_URL }}

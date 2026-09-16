@@ -25,6 +25,8 @@ export interface EmailProvider {
 
 M6 menyediakan dua adapter: development adapter yang tidak mengirim email nyata dan Resend HTTP adapter untuk production. Pemilihan adapter memakai `EMAIL_PROVIDER=development|resend`, sedangkan intent lingkungan memakai `APP_ENV=local|preview|production`. Preview yang berjalan dengan optimized `NODE_ENV=production` tetap boleh memakai development adapter no-send bila `APP_ENV=preview`; `APP_ENV=production` menolaknya secara fail-closed. Resend memakai `EMAIL_PROVIDER_API_KEY` hanya di server dan meneruskan `idempotencyKey` sebagai header `Idempotency-Key`. Saat deploy, gunakan subdomain pengirim khusus, misalnya `notify.morriztech.cloud`; jangan memakai password Gmail pribadi sebagai SMTP credential aplikasi.
 
+Sejak M9, adapter Resend memvalidasi `EMAIL_FROM` saat boot: alamat harus dapat diparse dan domain pengirim tidak boleh placeholder (`example.com`, `example.org`, `example.net`, `localhost`, `invalid`, `test`). Kesalahan konfigurasi sender gagal tertutup sebelum API menerima traffic. Langkah verifikasi domain pengirim (DKIM/SPF/DMARC) dijelaskan di [Deployment Runbook §4](DEPLOYMENT_RUNBOOK.md).
+
 Idempotency key bersifat deterministik per reminder, dengan format `reminder:{reminderId}`. Saat attempt pertama di-claim, scheduler menyimpan snapshot payload minimum di `reminders.delivery_payload`; semua retry memakai snapshot yang sama. Reminder tidak dapat diedit setelah `attemptCount > 0`, tetapi masih dapat dibatalkan ketika kembali `PENDING`. Provider production wajib mendukung idempotency key; bila adapter baru tidak mendukungnya, adapter tersebut tidak boleh diaktifkan untuk scheduler.
 
 ## 2. Scheduler flow

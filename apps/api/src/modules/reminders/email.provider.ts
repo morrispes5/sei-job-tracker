@@ -181,6 +181,48 @@ export class ResendEmailProvider implements EmailProvider {
   }
 }
 
+const PLACEHOLDER_SENDER_DOMAINS = [
+  "example.com",
+  "example.org",
+  "example.net",
+  "localhost",
+  "invalid",
+  "test",
+];
+
+export function readSenderAddress(from: string): string {
+  const address = extractAddress(from);
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
+    throw new Error(
+      'EMAIL_FROM must be a parseable address, e.g. "Sei <no-reply@notify.example.com>".',
+    );
+  }
+
+  return address;
+}
+
+function extractAddress(from: string): string {
+  const bracketMatch = /<([^<>\s]+@[^<>\s]+)>\s*$/.exec(from.trim());
+  return bracketMatch?.[1] ?? from.trim();
+}
+
+function assertVerifiedSenderDomain(from: string): void {
+  const domain = extractAddress(from).split("@")[1]?.toLowerCase() ?? "";
+  const isPlaceholder = PLACEHOLDER_SENDER_DOMAINS.some(
+    (placeholder) =>
+      domain === placeholder || domain.endsWith(`.${placeholder}`),
+  );
+
+  if (isPlaceholder) {
+    throw new Error(
+      "EMAIL_FROM must use a verified sending domain, not a placeholder domain.",
+    );
+  }
+
+  readSenderAddress(from);
+}
+
 export function createEmailProvider(
   environment: NodeJS.ProcessEnv = process.env,
 ): EmailProvider {
@@ -208,6 +250,8 @@ export function createEmailProvider(
         "EMAIL_PROVIDER_API_KEY and EMAIL_FROM are required for Resend.",
       );
     }
+
+    assertVerifiedSenderDomain(from);
 
     return new ResendEmailProvider(apiKey, from);
   }

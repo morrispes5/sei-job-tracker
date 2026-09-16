@@ -62,6 +62,15 @@
 - CI memvalidasi syntax/config smoke runner, dependency audit high, Drizzle schema, dan build kedua container image.
 - Gate operasional M8 baru hijau setelah migration pada Neon non-production dan `pnpm smoke:preview` terhadap URL HTTPS nyata lulus.
 
-## 5. Release gate
+## 5. M9 production readiness evidence
+
+- Adapter Resend menolak `EMAIL_FROM` yang tidak dapat diparse atau memakai domain placeholder saat boot; kegagalan konfigurasi sender terlihat sebelum API menerima traffic (unit test `email.provider.spec.ts`).
+- Smoke runner menerima tepat satu pasangan target: `PREVIEW_*` (`pnpm smoke:preview`) atau `PRODUCTION_*` (`pnpm smoke:production`); validasi URL, timeout, health exact-match, dan shell HTML identik untuk kedua target.
+- Workflow release manual (`.github/workflows/release.yml`) menjalankan seluruh gate validasi plus smoke nyata terhadap target preview/production, memakai GitHub environment protection dan menolak target tanpa URL tersimpan.
+- Runbook deployment mendokumentasikan verifikasi domain email (DKIM/SPF/DMARC), backup wajib sebelum migration, urutan release production, dan jalur rollback aplikasi/database.
+- [Backup & Restore Runbook](BACKUP_RESTORE_RUNBOOK.md) dan [Release Checklist](RELEASE_CHECKLIST.md) menjadi artefak wajib; production baru dinyatakan rilis setelah checklist disetujui.
+- Deploy production nyata, verifikasi domain email nyata, dan restore drill terhadap Neon production tetap external gate sampai resource provider tersedia.
+
+## 6. Release gate
 
 Sebuah milestone hanya selesai bila lint, typecheck, test relevan, migration check, dan manual smoke flow lulus. Bug P0/P1 harus diperbaiki sebelum production; P2 harus dicatat sebagai issue berprioritas.

@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently contains the **M8 — Preview deployment candidate** on top of the M1–M7 API, web, mobile, reminder, and hardening foundation. Provider-agnostic API/web images, database-aware health checking, preview-safe environment policy, and an HTTPS smoke runner are implemented. A real preview URL and Neon non-production migration remain an explicit external gate until provider resources are approved and verified.
+This repository currently contains the **M9 — Production readiness** layer on top of the M1–M8 foundation: a verified-sender email contract, a backup/restore runbook, a production release sequence with rollback paths, a manual release-gate workflow, and an HTTPS smoke runner that also covers the production target. A real production deploy, sending-domain verification, and a restore drill against Neon production remain explicit external gates until provider resources are approved and verified.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -38,8 +38,10 @@ Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja
 8. [Email reminders](docs/REMINDER_EMAIL.md) — desain scheduler dan provider email.
 9. [Implementation roadmap](docs/IMPLEMENTATION_ROADMAP.md) — urutan milestone.
 10. [Vibe coding playbook](docs/VIBE_CODING_PLAYBOOK.md) — prompt dan aturan kerja AI.
-11. [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) — environment, Neon, dan deploy.
-12. [Testing checklist](docs/TESTING_CHECKLIST.md) — syarat selesai tiap milestone.
+11. [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) — environment, Neon, domain email, rollback, dan deploy.
+12. [Backup & restore runbook](docs/BACKUP_RESTORE_RUNBOOK.md) — strategi backup Neon, export logis, dan drill restore.
+13. [Release checklist](docs/RELEASE_CHECKLIST.md) — gerbang persetujuan release production.
+14. [Testing checklist](docs/TESTING_CHECKLIST.md) — syarat selesai tiap milestone.
 
 ## Prinsip proyek
 
@@ -138,3 +140,13 @@ See [M7 handoff](docs/HANDOFF_M7.md) for exact evidence, security decisions, kno
 - CI runs formatting, lint, typecheck, unit/integration tests, build, Drizzle check, smoke validation, dependency audit, and both container builds.
 
 See [M8 handoff](docs/HANDOFF_M8.md) for local evidence, deployment commands, security notes, and the remaining external preview gate.
+
+## M9 Production readiness
+
+- Adapter Resend memvalidasi `EMAIL_FROM` saat boot: alamat harus dapat diparse dan domain pengirim placeholder (`example.com`, `localhost`, `test`, dll) ditolak fail-closed sebelum API menerima traffic.
+- Runbook deployment memuat verifikasi domain pengirim (DKIM/SPF/DMARC), backup wajib sebelum migration, urutan release production, serta jalur rollback aplikasi dan database.
+- Smoke runner HTTPS menerima tepat satu target: `PREVIEW_*` (`pnpm smoke:preview`) atau `PRODUCTION_*` (`pnpm smoke:production`) dengan validasi identik.
+- Workflow `release.yml` manual menjalankan seluruh gate validasi plus smoke nyata terhadap target preview/production lewat GitHub environment protection.
+- [Backup & Restore Runbook](docs/BACKUP_RESTORE_RUNBOOK.md) dan [Release Checklist](docs/RELEASE_CHECKLIST.md) menjadi artefak wajib; production rilis hanya setelah checklist disetujui.
+
+See [M9 handoff](docs/HANDOFF_M9.md) for files, verification evidence, security notes, and the remaining external production gates.

@@ -13,6 +13,7 @@
     "lint": "turbo run lint",
     "smoke:check": "node --check scripts/preview-smoke.mjs",
     "smoke:preview": "node scripts/preview-smoke.mjs",
+    "smoke:production": "node scripts/preview-smoke.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "pnpm --filter @sei/api test:integration",
