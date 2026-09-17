@@ -1,0 +1,20 @@
+# Netlify — Sei web preview
+# Proxy /api/v1 ke API Render agar cookie refresh (sameSite=lax) tetap satu site.
+# Jika nama service Render berubah, sesuaikan target redirect di bawah.
+[build]
+  command = "corepack enable && corepack prepare pnpm@11.25.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @sei/web build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://sei-api-preview.onrender.com/api/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

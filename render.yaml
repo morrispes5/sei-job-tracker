@@ -1,0 +1,34 @@
+# Render Blueprint — Sei API preview (free plan)
+# Deploy: Render Dashboard → New → Blueprint → pilih repo ini.
+# Migration tetap dijalankan manual dari lokal (lihat docs/DEPLOYMENT_RUNBOOK.md §5),
+# karena free plan tidak menyediakan shell/release command.
+services:
+  - type: web
+    name: sei-api-preview
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: APP_ENV
+        value: preview
+      - key: NODE_ENV
+        value: production
+      - key: EMAIL_PROVIDER
+        value: development
+      - key: EMAIL_FROM
+        value: Sei Preview <no-reply@notify.example.com>
+      - key: REMINDER_BATCH_SIZE
+        value: "25"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Diisi manual di Render Dashboard (sync: false = jangan timpa):
+      - key: DATABASE_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: APP_BASE_URL
+        sync: false

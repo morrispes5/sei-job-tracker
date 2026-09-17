@@ -157,3 +157,40 @@ Checklist lengkap dengan sign-off ada di [Release Checklist](RELEASE_CHECKLIST.m
 - [ ] Log memiliki request ID dan masking credential.
 - [ ] Backup/restore runbook sudah diuji minimal satu kali pada database non-production.
 - [ ] Ada jalur rollback aplikasi; migration destructive punya runbook sendiri.
+
+## 9. Jalur preview gratis (Neon + Render + Netlify)
+
+Jalur ini menutup gate eksternal M8 tanpa biaya: Neon free (database), Render free (API Docker), Netlify free (web static). Semua HTTPS otomatis. Konfigurasi sudah ter-commit: `render.yaml` (Blueprint API) dan `netlify.toml` (build web + proxy `/api/v1`).
+
+Catatan arsitektur: cookie refresh web memakai `sameSite=lax`, sehingga web dan API **wajib satu site**. Karena itu Netlify me-proxy `/api/v1/*` ke API Render (`netlify.toml`); web memakai `VITE_API_BASE_URL` yang menunjuk ke domain Netlify itu sendiri. Mobile tidak terdampak karena memakai JSON refresh token dan menembak URL API Render langsung.
+
+### Langkah eksekusi
+
+1. **Neon**: buat project baru (free), database `job_tracker`, region terdekat. Salin connection string pooled. Ini credential preview — berbeda dari production nanti.
+2. **Migration preview** (dari lokal, satu kali):
+
+   ```powershell
+   $env:DATABASE_URL = '<neon-preview-connection-string>'
+   pnpm --filter @sei/api db:migrate
+   ```
+
+3. **Render**: Dashboard → New → Blueprint → pilih repo; blueprint `render.yaml` membuat service Docker `sei-api-preview` plan free dengan health check `/api/v1/health`. Isi env `sync: false` di dashboard: `DATABASE_URL` (Neon), `WEB_ORIGIN` dan `APP_BASE_URL` (URL Netlify dari langkah 4). JWT secret di-generate otomatis. URL hasil: `https://sei-api-preview.onrender.com`.
+4. **Netlify**: Add new site → Import from Git → repo ini; `netlify.toml` terdeteksi otomatis. Set site name (misal `sei-web-preview`), lalu set environment variable `VITE_API_BASE_URL=https://<site-name>.netlify.app/api/v1` dan trigger deploy ulang. Bila nama service Render berbeda dari `sei-api-preview`, sesuaikan target redirect di `netlify.toml` dulu.
+5. **Smoke preview** (dari lokal):
+
+   ```powershell
+   $env:PREVIEW_API_BASE_URL = 'https://sei-api-preview.onrender.com/api/v1'
+   $env:PREVIEW_WEB_URL = 'https://<site-name>.netlify.app'
+   pnpm smoke:preview
+   ```
+
+6. **GitHub environment**: buat environment `preview` di repo settings dengan variable `API_BASE_URL` dan `WEB_URL` di atas, lalu jalankan workflow `release.yml` target `preview` sebagai bukti gate.
+7. **Mobile**: set `EXPO_PUBLIC_API_BASE_URL=https://sei-api-preview.onrender.com/api/v1` untuk build preview.
+
+### Batasan free plan yang harus diterima
+
+- Render free tidur setelah 15 menit tanpa traffic; cold start 30–60 detik. Smoke runner membatasi timeout 10 detik, jadi **hangatkan dulu** dengan membuka `https://sei-api-preview.onrender.com/api/v1/health` di browser sebelum menjalankan `pnpm smoke:preview`.
+- Scheduler reminder ikut tidur bersama instance; reminder preview bisa terlambat sampai instance bangun. Ini hilang saat pindah ke VPS always-on.
+- Email preview memakai provider `development` (no-send) sesuai kontrak `APP_ENV=preview`.
+
+Setelah smoke preview dan workflow `release.yml` hijau, tandai gate eksternal M8 nomor 2–7 tertutup di `HANDOFF_M8.md`. Migrasi ke VPS production tinggal mengganti target deploy karena image provider-agnostic.
