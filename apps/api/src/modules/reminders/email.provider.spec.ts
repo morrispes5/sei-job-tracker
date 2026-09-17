@@ -76,4 +76,46 @@ describe("EmailProvider", () => {
     );
     expect(formatted).toContain("12.00");
   });
+
+  it("rejects placeholder sender domains for Resend at boot", () => {
+    const base = {
+      APP_ENV: "production",
+      NODE_ENV: "production",
+      EMAIL_PROVIDER: "resend",
+      EMAIL_PROVIDER_API_KEY: "re_test_key",
+    };
+
+    for (const from of [
+      "Sei <no-reply@example.com>",
+      "Sei <no-reply@notify.example.net>",
+      "no-reply@localhost",
+      "Sei <no-reply@app.test>",
+    ]) {
+      expect(() => createEmailProvider({ ...base, EMAIL_FROM: from })).toThrow(
+        "verified sending domain",
+      );
+    }
+
+    expect(() =>
+      createEmailProvider({ ...base, EMAIL_FROM: "not-an-email" }),
+    ).toThrow("parseable address");
+
+    expect(() =>
+      createEmailProvider({ ...base, EMAIL_FROM: "Sei <missing-at>" }),
+    ).toThrow("parseable address");
+
+    expect(
+      createEmailProvider({
+        ...base,
+        EMAIL_FROM: "Sei <no-reply@notify.morriztech.cloud>",
+      }),
+    ).toBeInstanceOf(ResendEmailProvider);
+
+    expect(
+      createEmailProvider({
+        ...base,
+        EMAIL_FROM: "no-reply@notify.morriztech.cloud",
+      }),
+    ).toBeInstanceOf(ResendEmailProvider);
+  });
 });
