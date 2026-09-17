@@ -24,3 +24,8 @@ minimumReleaseAgeExclude:
 
 patchedDependencies:
   metro@0.83.3: patches/metro@0.83.3.patch
+
+# The metro patch targets the mobile workspace only; filtered API deploys
+# (apps/api/Dockerfile) do not install it and must not fail on the unused patch.
+allowUnusedPatches:
+  - metro@0.83.3
