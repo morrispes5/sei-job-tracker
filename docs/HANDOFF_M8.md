@@ -69,6 +69,13 @@ Docker CLI tidak tersedia pada workstation lokal ini. Karena itu build image buk
 
 Integration run pertama menemukan `/api/v1/health` mengembalikan HTTP 500 walau migration dan query database langsung berhasil. Penyebabnya adalah dependency injection token implisit pada controller/service baru tidak konsisten dengan pola explicit token yang dipakai modul existing pada runtime test. `@Inject(HealthService)` dan `@Inject(DatabaseService)` ditambahkan; integration suite berikutnya lulus 5/5 termasuk health/database readiness.
 
+CI run pertama pada PR #1 menemukan `docker build` API gagal di step `pnpm --filter @sei/api deploy --prod --legacy` dengan `ERR_PNPM_UNUSED_PATCH`: patch `metro@0.83.3` hanya dipakai dependency mobile, sehingga filtered deploy API-only menganggapnya tidak terpakai. Fix `3af62cf` menambahkan `allowUnusedPatches: [metro@0.83.3]` di `pnpm-workspace.yaml`; diverifikasi dengan repro install terfilter pada copy workspace bersih (gagal tanpa setting, sukses dengan setting). CI run berikutnya hijau penuh termasuk kedua Docker build.
+
+## CI evidence — 17 September 2026
+
+- PR #1 (`codex/m8-implementation` → `main`): workflow Validate hijau (3m17s), termasuk build image API dan web — bukti container yang sebelumnya tidak tersedia lokal.
+- PR #1 merged ke `main` (merge commit `b53cb98`). Gate eksternal M8 nomor 1 (push branch + GitHub Actions hijau) tertutup.
+
 ## Security review
 
 Review difokuskan pada secret boundary, environment fail-closed, health response, image privilege, build-time public variable, URL/redirect validation, production artifact scope, dan perubahan CI.

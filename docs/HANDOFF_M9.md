@@ -85,7 +85,8 @@ Tidak ditemukan P0/P1 baru pada diff M9. Risiko P2 yang tetap terbuka sama denga
 | smoke production dengan URL HTTP | pass: ditolak (`must use HTTPS`) |
 | `pnpm audit --prod --audit-level high` | pass: 0 high/critical; 2 moderate transitive Expo advisories (dikenal sejak M8) |
 | `git diff --check` | pass |
-| local Docker image build | unavailable: Docker CLI tidak terpasang; dibuktikan oleh CI |
+| CI PR #2 (`codex/m9-production-readiness` → `main`) | pass: workflow Validate hijau (3m32s) termasuk kedua Docker build; merged ke `main` (`19a7f21`) |
+| local Docker image build | pass via CI (Docker CLI tidak terpasang lokal) |
 | verifikasi domain email, backup/restore drill, migration production, smoke production nyata | pending external gate |
 
 ## External gate untuk menutup M9
