@@ -2,8 +2,12 @@
   "name": "@sei/api",
   "version": "0.1.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "db:migrate:prod": "node dist/drizzle/migrate.js",
     "db:check": "drizzle-kit check --config drizzle.config.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "tsx src/drizzle/migrate.ts",
@@ -11,12 +15,14 @@
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "dev": "tsx watch src/main.ts",
     "lint": "eslint src",
+    "prebuild": "pnpm --filter @sei/shared build",
     "pretest": "pnpm --filter @sei/shared build",
     "predb:check": "pnpm --filter @sei/shared build",
     "predb:generate": "pnpm --filter @sei/shared build",
     "predb:migrate": "pnpm --filter @sei/shared build",
     "predb:seed": "pnpm --filter @sei/shared build",
     "predb:studio": "pnpm --filter @sei/shared build",
+    "start:prod": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "tsx src/integration/run-postgres-e2e.ts"

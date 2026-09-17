@@ -8,7 +8,7 @@
 
 **Sei** is the personal command center for tracking job, internship, and freelance applications. The name captures the loop behind a thoughtful job search: collect an opportunity, evaluate the next move, and improve with every outcome.
 
-This repository currently implements **M7 — Integration tests and hardening** on top of the M1–M6 API, web, mobile, and reminder foundation. Real disposable-PostgreSQL E2E, stale reminder recovery, tenant storage bounds, transport hardening, dependency review, and critical UI smoke checks are implemented; deployment remains a separate M8 decision.
+This repository currently contains the **M8 — Preview deployment candidate** on top of the M1–M7 API, web, mobile, reminder, and hardening foundation. Provider-agnostic API/web images, database-aware health checking, preview-safe environment policy, and an HTTPS smoke runner are implemented. A real preview URL and Neon non-production migration remain an explicit external gate until provider resources are approved and verified.
 
 Blueprint untuk aplikasi personal yang membantu pengguna melacak lamaran **kerja, magang, dan freelance** dari peluang awal sampai hasil akhir.
 
@@ -127,3 +127,14 @@ See [M6 handoff](docs/HANDOFF_M6.md) for the implementation map, tests, security
 - Session-creating auth requests require the documented `X-Client-Platform` header, blocking simple cross-site form login attempts.
 
 See [M7 handoff](docs/HANDOFF_M7.md) for exact evidence, security decisions, known P2 items, and external gates.
+
+## M8 Preview deployment candidate
+
+- The API image is multi-stage, runs as a non-root user, contains production dependencies only, and includes the reviewed Drizzle migrations for a controlled release command.
+- `GET /api/v1/health` performs a minimal PostgreSQL query and returns only `{ "status": "ok" }` when the API and database are ready.
+- `APP_ENV=local|preview|production` separates deployment intent from optimized `NODE_ENV=production` builds. Preview may use the no-send email adapter; production rejects it.
+- The web image builds against an explicit HTTPS API base URL and serves the SPA from non-root Nginx with fallback routing, a container health response, and baseline security headers.
+- `pnpm smoke:preview` checks the deployed API/database and web shell over HTTPS without requiring an account.
+- CI runs formatting, lint, typecheck, unit/integration tests, build, Drizzle check, smoke validation, dependency audit, and both container builds.
+
+See [M8 handoff](docs/HANDOFF_M8.md) for local evidence, deployment commands, security notes, and the remaining external preview gate.

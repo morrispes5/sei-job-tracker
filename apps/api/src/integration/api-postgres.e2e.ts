@@ -240,6 +240,10 @@ describe.sequential("real PostgreSQL API and reminder integration", () => {
   });
 
   it("proves auth validation, generic login failure, rotation, and logout", async () => {
+    const health = await request("/api/v1/health");
+    expect(health.status).toBe(200);
+    expect(health.body).toEqual({ status: "ok" });
+
     const invalid = await request("/api/v1/auth/register", {
       method: "POST",
       requestId: "m7-validation-check",

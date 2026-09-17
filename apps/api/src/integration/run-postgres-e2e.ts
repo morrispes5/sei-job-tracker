@@ -110,6 +110,7 @@ async function main(): Promise<void> {
     const databaseUrl = `postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@127.0.0.1:${port}/${DATABASE_NAME}`;
     const environment: NodeJS.ProcessEnv = {
       ...process.env,
+      APP_ENV: "local",
       APP_BASE_URL: "http://127.0.0.1:5173",
       DATABASE_URL: databaseUrl,
       EMAIL_PROVIDER: "development",

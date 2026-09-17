@@ -12,6 +12,22 @@ Base URL: `/api/v1`. Semua endpoint JSON. Error mengikuti format tunggal:
 }
 ```
 
+## 0. Health
+
+| Method | Path      | Auth | Fungsi                                   |
+| ------ | --------- | ---- | ---------------------------------------- |
+| GET    | `/health` | No   | Memastikan API hidup dan PostgreSQL siap |
+
+Health check menjalankan query PostgreSQL minimal. Respons sukses harus persis:
+
+```json
+{ "status": "ok" }
+```
+
+Endpoint tidak boleh mengembalikan connection string, versi database, latency,
+stack trace, atau detail internal lain. Kegagalan database memakai error generik
+API dan status non-2xx.
+
 ## 1. Auth
 
 | Method | Path             | Auth                 | Fungsi                                  |
